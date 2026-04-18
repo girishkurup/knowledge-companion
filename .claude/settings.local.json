@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm show *)",
+      "Bash(npm install *)",
+      "Bash(npx next *)",
+      "Bash(node -e \"const {randomBytes}=require\\('crypto'\\); console.log\\(randomBytes\\(32\\).toString\\('base64'\\)\\)\")",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\" http://localhost:3000)",
+      "Bash(taskkill /PID 26644 /F)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} on port \" http://localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001)",
+      "Bash(cmd.exe /c \"taskkill /PID 26644 /F\")",
+      "Bash(cmd.exe /c \"taskkill /F /IM node.exe\")",
+      "Bash(powershell -Command \"Stop-Process -Id 26644 -Force -ErrorAction SilentlyContinue; Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host 'Done'\")",
+      "Bash(curl -s -o /dev/null -w \"port 3000: %{http_code}\" http://localhost:3000)",
+      "Bash(node -e \"require\\('dotenv'\\).config\\({path:'.env.local'}\\); console.log\\('KEY:', process.env.ANTHROPIC_API_KEY ? 'SET \\('+process.env.ANTHROPIC_API_KEY.slice\\(0,20\\)+'...\\)' : 'MISSING'\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const lines=fs.readFileSync\\('.env.local','utf8'\\).split\\('\\\\n'\\); const key=lines.find\\(l=>l.startsWith\\('ANTHROPIC_API_KEY'\\)\\); console.log\\(key || 'NOT FOUND'\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(curl -s http://localhost:3000/api/debug-env)",
+      "Bash(curl -s http://localhost:3000/api/test-env)",
+      "Bash(powershell -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('.env.local','utf8'\\); console.log\\('FILE OK:', c.includes\\('sk-ant'\\)\\); console.log\\('LINES:', c.split\\('\\\\n'\\).length\\)\")",
+      "Bash(powershell -Command \"[System.Environment]::GetEnvironmentVariable\\('ANTHROPIC_API_KEY'\\)\")",
+      "Bash(echo \"Started PID: $!\")",
+      "Bash(ngrok version *)",
+      "Bash(ngrok config *)",
+      "Bash(ngrok http *)",
+      "Bash(echo \"ngrok PID: $!\" sleep 5)",
+      "Bash(curl -s http://localhost:4040/api/tunnels)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['tunnels'][0]['public_url']\\)\")",
+      "Bash(powershell -Command \"Get-Process ngrok -ErrorAction SilentlyContinue | Stop-Process -Force\" sleep 2 ngrok http 3000 --log=stdout)",
+      "Bash(gh auth *)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}
