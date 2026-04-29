@@ -28,7 +28,14 @@ After starting a tunnel, update `APP_URL` in `.env.local` to the public URL and 
 
 ## Environment Setup
 
-Copy `.env.example` to `.env.local`. Only `ANTHROPIC_API_KEY` is required for the core interview flow. The remaining vars are only needed if you re-add email or reporting features.
+Copy `.env.example` to `.env.local`. Only two variables are needed:
+
+```env
+ANTHROPIC_API_KEY=sk-ant-...
+APP_URL=http://localhost:3000
+```
+
+No SMTP, JWT, or admin credentials required — email sending and admin auth have been removed.
 
 **Critical:** Next.js/Turbopack inlines `process.env` at compile time. `lib/config.ts` works around this by reading `.env.local` directly from disk at runtime. All agents must use `getEnv('KEY')` from `lib/config.ts` — never `process.env.KEY` directly. Verify with `/api/test-env`.
 
