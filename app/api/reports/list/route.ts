@@ -1,15 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getAllReports, getReportById } from '@/lib/db'
-import { verifyAdminToken } from '@/lib/auth'
-import { cookies } from 'next/headers'
 import { generatePDF } from '@/lib/agents/reportAgent'
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')?.value
-  if (!token || !verifyAdminToken(token)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   const { searchParams } = new URL(request.url)
   const downloadId = searchParams.get('download')

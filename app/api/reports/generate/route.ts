@@ -7,16 +7,9 @@ import {
   saveReport,
   type Session,
 } from '@/lib/db'
-import { verifyAdminToken } from '@/lib/auth'
 import { generateReportMarkdown, generatePDF, type ReportType } from '@/lib/agents/reportAgent'
-import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')?.value
-  if (!token || !verifyAdminToken(token)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   try {
     const { topic, type, format } = await request.json() as {

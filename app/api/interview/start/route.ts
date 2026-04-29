@@ -6,19 +6,20 @@ import {
   saveQuestions,
   getKnowledgeGraph,
 } from '@/lib/db'
-import { verifyInterviewToken } from '@/lib/auth'
 import { generateInitialQuestions } from '@/lib/agents/questionBankAgent'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const token = searchParams.get('token')
+  const sessionIdParam = searchParams.get('sessionId')
 
-  if (!token) return NextResponse.json({ error: 'Token required' }, { status: 400 })
+  if (!sessionIdParam) return NextResponse.json({ error: 'sessionId required' }, { status: 400 })
 
-  const payload = verifyInterviewToken(token)
-  if (!payload) return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
+  const sessionId = Number(sessionIdParam)
+  if (!Number.isInteger(sessionId) || sessionId <= 0) {
+    return NextResponse.json({ error: 'Invalid sessionId' }, { status: 400 })
+  }
 
-  const session = getSessionById(payload.sessionId)
+  const session = getSessionById(sessionId)
   if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
 
   if (session.status === 'completed') {
