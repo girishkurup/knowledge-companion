@@ -10,23 +10,19 @@ import {
   upsertKnowledgeGraph,
   saveQuestions,
 } from '@/lib/db'
-import { verifyInterviewToken } from '@/lib/auth'
 import { streamCompanionResponse, buildKnowledgeSummary, type CompanionContext } from '@/lib/agents/companionAgent'
 import { updateKnowledgeGraph } from '@/lib/agents/knowledgeGraphAgent'
 import { generateGapQuestions } from '@/lib/agents/questionBankAgent'
 
 export async function POST(request: Request) {
   try {
-    const { token, userMessage } = await request.json() as { token: string; userMessage: string }
+    const { sessionId, userMessage } = await request.json() as { sessionId: number; userMessage: string }
 
-    if (!token || !userMessage?.trim()) {
-      return new Response(JSON.stringify({ error: 'Token and message required' }), { status: 400 })
+    if (!sessionId || !userMessage?.trim()) {
+      return new Response(JSON.stringify({ error: 'sessionId and message required' }), { status: 400 })
     }
 
-    const payload = verifyInterviewToken(token)
-    if (!payload) return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401 })
-
-    const session = getSessionById(payload.sessionId)
+    const session = getSessionById(Number(sessionId))
     if (!session || session.status === 'completed' || session.status === 'expired') {
       return new Response(JSON.stringify({ error: 'Session unavailable' }), { status: 410 })
     }
