@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Branch:** This is the `KG1` branch — a simplified version with no admin portal, no JWT auth, and no email invitations. Users start interviews directly from the landing page.
+
 ## Commands
 
 ```bash
@@ -26,23 +28,21 @@ After starting a tunnel, update `APP_URL` in `.env.local` to the public URL and 
 
 ## Environment Setup
 
-Copy `.env.example` to `.env.local`. The app starts without env vars but all AI calls and email sends will fail at runtime.
+Copy `.env.example` to `.env.local`. Only `ANTHROPIC_API_KEY` is required for the core interview flow. The remaining vars are only needed if you re-add email or reporting features.
 
-Required: `ANTHROPIC_API_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `JWT_SECRET`, `APP_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`.
-
-**Critical:** Next.js/Turbopack inlines `process.env` at compile time. `lib/config.ts` works around this by reading `.env.local` directly from disk at runtime. All agents and auth must use `getEnv('KEY')` from `lib/config.ts` — never `process.env.KEY` directly. Verify with `/api/test-env`.
+**Critical:** Next.js/Turbopack inlines `process.env` at compile time. `lib/config.ts` works around this by reading `.env.local` directly from disk at runtime. All agents must use `getEnv('KEY')` from `lib/config.ts` — never `process.env.KEY` directly. Verify with `/api/test-env`.
 
 ## Architecture
 
 ### Request flow for an interview session
 
-1. Admin POSTs to `/api/admin/register` → creates a row in `interview_sessions`, signs a JWT `{ sessionId, email }`, emails it as the link URL parameter.
-2. Interviewee visits `/interview/[token]` → `GET /api/interview/start?token=...` verifies the JWT, activates the session, calls `generateInitialQuestions` (Question Bank Agent) to pre-populate `question_cache`.
-3. Each chat turn: `POST /api/interview/chat` → verifies JWT, streams Companion Agent response via SSE, then runs Knowledge Graph Agent and optionally Question Bank Agent as a **fire-and-forget async IIFE** after the stream closes.
+1. User fills the setup form at `/` (Name, Topic, Depth, Duration) → `POST /api/session/create` → returns `{ sessionId }` → browser redirects to `/interview/[sessionId]`.
+2. Interview page calls `GET /api/interview/start?sessionId=X` → activates the session, calls Question Bank Agent to pre-populate `question_cache`, returns session metadata + message history.
+3. Each chat turn: `POST /api/interview/chat` with `{ sessionId, userMessage }` → streams Companion Agent response via SSE, then runs Knowledge Graph Agent and optionally Question Bank Agent as a **fire-and-forget async IIFE** after the stream closes.
 
-### Two-token distinction
+### No authentication
 
-`interview_sessions.token` is a random UUID in the DB (internal reference only). The URL token is a JWT signed with `JWT_SECRET` containing `{ sessionId, email }`. `verifyInterviewToken` decodes the JWT to get `sessionId` for DB lookup. These are entirely separate.
+There is no login, no JWT verification, and no admin portal in this branch. Sessions are identified by their numeric DB row ID (`session.id`). Anyone with a `/interview/[sessionId]` URL can access that session — this is intentional for open demos.
 
 ### The 4 AI agents
 
@@ -53,7 +53,7 @@ All call `claude-sonnet-4-6` via `@anthropic-ai/sdk`. Each is stateless — cont
 | Companion | `lib/agents/companionAgent.ts` | Streaming async generator; every chat POST |
 | Question Bank | `lib/agents/questionBankAgent.ts` | Non-streaming; session start + every 5 user messages |
 | Knowledge Graph | `lib/agents/knowledgeGraphAgent.ts` | Non-streaming; fire-and-forget after every non-first exchange |
-| Report | `lib/agents/reportAgent.ts` | Non-streaming; on-demand from admin reports page |
+| Report | `lib/agents/reportAgent.ts` | Non-streaming; on-demand via `/api/reports/generate` |
 
 ### Knowledge graph update logic
 
@@ -68,12 +68,6 @@ The graph is shared per topic across all sessions. One row per topic in `knowled
 ### Database
 
 SQLite at `data/knowledge.db` (auto-created). `lib/db.ts` exports a synchronous singleton via `better-sqlite3`. All DB functions are synchronous. Knowledge graph stored as a single JSON blob replaced atomically — not as relational rows.
-
-### Admin authentication
-
-The admin portal has no login page — the dashboard is accessed directly at `/admin`. Cookie `admin_token` (JWT, 24h) is set on login with `sameSite: 'none'` and `secure` based on whether `APP_URL` starts with `https`. All `/api/admin/*`, `/api/knowledge/*`, and `/api/reports/*` routes verify this cookie.
-
-All fetch calls from admin pages must include `credentials: 'include'` — required for cookie transmission over tunnel URLs (ngrok/Cloudflare).
 
 ### Streaming (SSE)
 
@@ -95,3 +89,17 @@ The client uses a `useRef` guard (`isSendingRef`) to prevent concurrent sends wh
 ### allowedDevOrigins
 
 When using tunnels in dev mode, add the tunnel hostname to `allowedDevOrigins` in `next.config.ts` to prevent Next.js from blocking cross-origin requests to dev resources. Restart server after changes.
+
+## Route Map
+
+| Route | Purpose |
+|-------|---------|
+| `GET /` | Setup form — name, topic, depth, duration |
+| `GET /interview/[sessionId]` | Chat UI with SSE streaming and countdown timer |
+| `POST /api/session/create` | Create session, return sessionId (no auth) |
+| `GET /api/interview/start` | Activate session, generate initial questions |
+| `POST /api/interview/chat` | Stream Companion Agent response via SSE |
+| `GET /api/knowledge/graph` | Read knowledge graph for a topic |
+| `POST /api/reports/generate` | Generate PDF/Markdown report |
+| `GET /api/reports/list` | List saved reports |
+| `GET /api/test-env` | Verify ANTHROPIC_API_KEY is loaded |
